@@ -24,6 +24,7 @@ public class WeatherDataForAWeek {
             connection.addRequestProperty("x-api-key", context.getString(R.string.open_weather_maps_app_id));
             Response response = new Gson().fromJson(new InputStreamReader(connection.getInputStream()), Response.class);
 
+
             return response;
         } catch (Exception e) {
             e.printStackTrace();
