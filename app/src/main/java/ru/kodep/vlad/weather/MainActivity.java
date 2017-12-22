@@ -17,6 +17,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import ru.kodep.vlad.weather.entity.City;
@@ -178,7 +180,10 @@ public class MainActivity extends AppCompatActivity {
 //            for (DayForecast dayForecast : list) {
 //                dayForecast.getClouds();
 //            }
-            gradus.setText(response.getList().get(1).getClouds() + "cnt:" + response.getCnt() + "cod:"+ response.getCod());
+            gradus.setText(response.getList().get(1).getClouds() + "cnt:" + response.getCnt() + "cod:" + response.getCod());
+            Long day = response.getList().get(0).getDt()*1000;
+            @SuppressLint("SimpleDateFormat") String dayOfTheWeek = new SimpleDateFormat("dd MMMM yyyy").format(new Date(day));
+            humidity.setText(dayOfTheWeek);
 
 
         } catch (Exception e) {

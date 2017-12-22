@@ -25,6 +25,7 @@ public class WeatherDataForAWeek {
             Response response = new Gson().fromJson(new InputStreamReader(connection.getInputStream()), Response.class);
 
 
+
             return response;
         } catch (Exception e) {
             e.printStackTrace();
