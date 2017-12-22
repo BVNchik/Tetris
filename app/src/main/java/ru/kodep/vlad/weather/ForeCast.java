@@ -17,7 +17,6 @@ public class ForeCast {
         this.humidity = humidity;
         this.pressure = pressure;
     }
-
     public String getCity() { return city; }
 
     public void setCity(String city) {

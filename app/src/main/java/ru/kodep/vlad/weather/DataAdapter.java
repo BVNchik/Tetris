@@ -2,7 +2,6 @@ package ru.kodep.vlad.weather;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.icu.text.AlphabeticIndex;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,44 +21,43 @@ import ru.kodep.vlad.weather.entity.Response;
 class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
 
     private LayoutInflater inflater;
-    private List<Response> records;
+    private List<Response> responses;
 
-    DataAdapter(Context context, List<Response> records) {
-        this.records = records;
+    DataAdapter(Context context, List<Response> responses) {
+        this.responses = responses;
         this.inflater = LayoutInflater.from(context);
     }
 
     @Override
     public DataAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
-        View view = inflater.inflate(R.layout., parent, false);
+        View view = inflater.inflate(R.layout.list_item, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(DataAdapter.ViewHolder holder, int position) {
-        AlphabeticIndex.Record record = records.get(position);
-        String score = String.valueOf(record.getScore());
-        holder.scoreView.setText(score);
-        holder.nameView.setText(record.getName());
+        Response response = responses.get(position);
+        double degre = responses.get(0).getList().get(0).getDeg();
+        holder.degree.setText((int) degre);
         @SuppressLint("SimpleDateFormat")
-        String time = new SimpleDateFormat("mm:ss").format(new Date(record.getTime()));
-        holder.timeView.setText(time);
+        String dayOfTheWeek = new SimpleDateFormat("dd MMMM yyyy").format(new Date(responses.get(0).getList().get(0).getDt()));
+        holder.dayOfTheWeek.setText(dayOfTheWeek);
     }
 
     @Override
     public int getItemCount() {
-        return records.size();
+        return responses.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        final TextView nameView, scoreView, timeView;
+        final TextView dayOfTheWeek, degree, description;
 
         ViewHolder(View view) {
             super(view);
-            scoreView =  view.findViewById(R.id.tvScores);
-            nameView =  view.findViewById(R.id.tvName);
-            timeView =  view.findViewById(R.id.tvTime);
+             dayOfTheWeek=  view.findViewById(R.id.tvDayOfTheWeek);
+            degree =  view.findViewById(R.id.tvDegree);
+            description =  view.findViewById(R.id.tvDescription);
         }
     }
 }
