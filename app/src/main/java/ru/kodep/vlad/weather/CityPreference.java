@@ -20,10 +20,15 @@ class CityPreference {
     String getCity() {
         return prefs.getString("city", "Moscow");
     }
+    String getId() { return prefs.getString("cityId", "5601538");}
 
     void setCity(String city) {
         prefs.edit().putString("city", city).apply();
     }
+    void setId(String id) {
+        prefs.edit().putString("cityId", id).apply();
+    }
 }
+
 
 

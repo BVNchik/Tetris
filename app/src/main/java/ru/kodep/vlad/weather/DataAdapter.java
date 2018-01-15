@@ -1,7 +1,6 @@
 package ru.kodep.vlad.weather;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -12,52 +11,60 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
-import ru.kodep.vlad.weather.entity.Response;
-
 /**
  * Created by vlad on 21.12.17
  */
 
 class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
 
-    private LayoutInflater inflater;
-    private List<Response> responses;
 
-    DataAdapter(Context context, List<Response> responses) {
-        this.responses = responses;
-        this.inflater = LayoutInflater.from(context);
+    private List<ForeCast> forecasts;
+
+    DataAdapter(List<ForeCast> forecasts) {
+        this.forecasts = forecasts;
     }
+
 
     @Override
     public DataAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
-        View view = inflater.inflate(R.layout.list_item, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.list_item, parent, false);
         return new ViewHolder(view);
     }
 
+    @SuppressLint({"DefaultLocale", "SetTextI18n"})
     @Override
     public void onBindViewHolder(DataAdapter.ViewHolder holder, int position) {
-        Response response = responses.get(position);
-        double degre = responses.get(0).getList().get(0).getDeg();
-        holder.degree.setText((int) degre);
+        ForeCast foreCast = forecasts.get(position);
         @SuppressLint("SimpleDateFormat")
-        String dayOfTheWeek = new SimpleDateFormat("dd MMMM yyyy").format(new Date(responses.get(0).getList().get(0).getDt()));
-        holder.dayOfTheWeek.setText(dayOfTheWeek);
+        String data = new SimpleDateFormat("dd MMMM yyyy").format(new Date(foreCast.getDt() * 1000));
+        holder.data.setText(data);
+       Double temp = foreCast.getTemp();
+        holder.temp.setText(String.format("%.1f", temp) + "\u00b0C");
+        String speed = String.valueOf(foreCast.getSpeed());
+        holder.speed.setText("Ветер: " + speed + "м/с");
+        String humidity = String.valueOf(foreCast.getHumidity());
+        holder.humidity.setText("Влажность: " + humidity + "%");
+        String pressure = String.valueOf(foreCast.getPressure());
+        holder.pressure.setText("Давление: " + pressure + "hPa");
+
     }
 
     @Override
     public int getItemCount() {
-        return responses.size();
+        return forecasts.size();
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        final TextView dayOfTheWeek, degree, description;
+        final TextView data, temp, speed, humidity, pressure;
 
         ViewHolder(View view) {
             super(view);
-             dayOfTheWeek=  view.findViewById(R.id.tvDayOfTheWeek);
-            degree =  view.findViewById(R.id.tvDegree);
-            description =  view.findViewById(R.id.tvDescription);
+            data = view.findViewById(R.id.tvData);
+            temp = view.findViewById(R.id.tvTemp);
+            speed = view.findViewById(R.id.tvSpeed);
+            humidity = view.findViewById(R.id.tvHumiditys);
+            pressure = view.findViewById(R.id.tvPressures);
         }
     }
 }

@@ -7,45 +7,23 @@ package ru.kodep.vlad.weather;
 public class ForeCast {
 
 
-    private String city, humidity, pressure;
-    private  double gradus;
+    private Long dt;
+    private Double humidity;
+    private  Double temp;
+    private  Double speed;
+    private Double pressure;
 
-
-    ForeCast(String city, double gradus, String humidity, String pressure) {
-        this.city = city;
-        this.gradus = gradus;
+    ForeCast(Long dt, Double temp, Double speed, Double humidity, Double pressure) {
+        this.dt = dt;
+        this.temp = temp;
+        this.speed = speed;
         this.humidity = humidity;
         this.pressure = pressure;
     }
-    public String getCity() { return city; }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public double getGradus() {
-        return gradus;
-    }
-
-    public void setGradus(Double gradus) {
-        this.gradus = gradus;
-    }
-
-    public String getHumidity() {
-        return humidity;
-    }
-
-    public void setHumidity(String humidity) {
-        this.humidity = humidity;
-    }
-
-    public String getPressure() {
-        return pressure;
-    }
-
-    public void setPressure(String pressure) {
-        this.pressure = pressure;
-    }
-
+ public Long getDt() {return dt;}
+ public Double getTemp() {return  temp;}
+ public Double getSpeed() {return  speed;}
+ public Double getHumidity() {return  humidity;}
+ public Double getPressure() {return  pressure;}
 }
 

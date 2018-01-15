@@ -6,14 +6,32 @@ package ru.kodep.vlad.weather.entity;
 
 public class City {
 
-    private static String name;
-    private int id;
+    private String name;
+    private String id;
+    private Long dt;
+    private Main main;
 
-    public int getId() {
+
+
+    public Double getTemp() {
+        return main.getTemp();
+    }
+    public Double getHumidity() {
+        return main.getHumidity();
+    }
+    public Double getPressure() {
+        return main.getPressure();
+    }
+
+    public Long getDt() {
+        return dt;
+    }
+
+    public String getId() {
         return id;
     }
 
-    public  String getName() {
+    public String getName() {
         return name;
     }
 }

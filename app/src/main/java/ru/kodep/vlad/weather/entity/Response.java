@@ -1,19 +1,11 @@
 package ru.kodep.vlad.weather.entity;
 
-/**
- * Created by vlad on 21.12.17
- */
-
 import java.util.List;
-
-/**
- * Created by vlad on 21.12.17
- */
 
 public class Response {
 
     private String cod;
-    private int message;
+    private Double message;
     private int cnt;
     private List<DayForecast> list;
 
@@ -21,7 +13,7 @@ public class Response {
         return cod;
     }
 
-    public int getMessage() {
+    public Double getMessage() {
         return message;
     }
 

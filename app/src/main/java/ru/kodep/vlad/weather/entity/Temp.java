@@ -6,35 +6,35 @@ package ru.kodep.vlad.weather.entity;
 
 public class Temp {
 
-    private float day;
-    private float min;
-    private float max;
-    private float night;
-    private float eve;
-    private float morn;
+    private Double day;
+    private Double min;
+    private Double max;
+    private Double night;
+    private Double eve;
+    private Double morn;
 
 
-    public float getDay() {
+    Double getDay() {
         return day;
     }
 
-    public float getMin() {
+    public Double getMin() {
         return min;
     }
 
-    public float getMax() {
+    public Double getMax() {
         return max;
     }
 
-    public float getNight() {
+    public Double getNight() {
         return night;
     }
 
-    public float getEve() {
+    public Double getEve() {
         return eve;
     }
 
-    public float getMorn() {
+    public Double getMorn() {
         return morn;
     }
 }

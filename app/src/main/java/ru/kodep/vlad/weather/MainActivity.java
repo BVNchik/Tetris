@@ -7,56 +7,73 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.RequiresApi;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 
 import ru.kodep.vlad.weather.entity.City;
 import ru.kodep.vlad.weather.entity.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     SearchCityTask mt;
     MyTaskWeather mtw;
-    private List<ForeCast> foreCasts;
+    private List<ForeCast> foreCasts = new ArrayList<>();
     Handler handler;
+    DataAdapter adapter;
     TextView city;
-    TextView gradus;
+    TextView temp;
     TextView humidity;
     TextView pressure;
+    RelativeLayout viewBar;
+    ConstraintLayout viewError;
+    LinearLayout viewWeather;
     String mCity;
-    int id;
+    String id;
 
-    public MainActivity() {
-    }
 
     @SuppressLint("CommitTransaction")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        findViewById(R.id.btnRefresh).setOnClickListener(this);
+        findViewById(R.id.btnExit).setOnClickListener(this);
+        viewBar = findViewById(R.id.viewBar);
+        viewError = findViewById(R.id.viewError);
+        viewWeather = findViewById(R.id.viewWeather);
         city = findViewById(R.id.tvCity);
-        gradus = findViewById(R.id.tvGradus);
+        temp = findViewById(R.id.tvTemp);
         humidity = findViewById(R.id.tvHumidity);
         pressure = findViewById(R.id.tvPressure);
         handler = new Handler();
         updateWeatherData(new CityPreference(MainActivity.this).getCity());
+        viewError.setVisibility(View.GONE);
+        viewWeather.setVisibility(View.GONE);
+        viewBar.setVisibility(View.VISIBLE);
     }
 
-    //    private void addInAdapter() {
-//        RecyclerView recyclerView =  findViewById(R.id.rvListForeCast);
-//        adapter = new DataAdapter(this, records);
-//        recyclerView.setAdapter(adapter);
-//    }
+    private void addInAdapter() {
+        RecyclerView recyclerView = findViewById(R.id.rvListForeCast);
+        adapter = new DataAdapter(foreCasts);
+        recyclerView.setAdapter(adapter);
+        viewError.setVisibility(View.GONE);
+        viewWeather.setVisibility(View.VISIBLE);
+        viewBar.setVisibility(View.GONE);
+    }
+
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
@@ -95,9 +112,24 @@ public class MainActivity extends AppCompatActivity {
         mt.execute();
     }
 
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btnRefresh:
+                updateWeatherData(new CityPreference(MainActivity.this).getCity());
+                viewError.setVisibility(View.GONE);
+                viewWeather.setVisibility(View.GONE);
+                viewBar.setVisibility(View.VISIBLE);
+                break;
+            case R.id.btnExit:
+                finish();
+                break;
+        }
+    }
+
     @SuppressLint("StaticFieldLeak")
     class SearchCityTask extends AsyncTask<Void, Void, City> {
-
 
         @Override
         protected City doInBackground(Void... params) {
@@ -106,15 +138,9 @@ public class MainActivity extends AppCompatActivity {
             if (city == null) {
                 handler.post(new Runnable() {
                     public void run() {
-                        Toast.makeText(MainActivity.this, MainActivity.this.getString(R.string.place_not_found),
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
-            } else {
-                handler.post(new Runnable() {
-                    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-                    public void run() {
-                        renderWeather(city);
+                        viewError.setVisibility(View.VISIBLE);
+                        viewWeather.setVisibility(View.GONE);
+                        viewBar.setVisibility(View.GONE);
                     }
                 });
             }
@@ -125,39 +151,42 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(City result) {
             super.onPostExecute(result);
-            renderWeather(result);
-            renderId(result);
+            if (result == null) {
 
+            } else {
+                renderWeather(result);
+                renderId(result);
+
+            }
         }
     }
 
     private void renderId(City result) {
-        id = result.getId();
+        if (result.getId() == null) {
+            id = new CityPreference(MainActivity.this).getId();
+        } else {
+            id = result.getId();
+        }
         mtw = new MyTaskWeather();
         mtw.execute();
+        foreCasts.clear();
     }
+
 
     @SuppressLint("StaticFieldLeak")
     class MyTaskWeather extends AsyncTask<Void, Void, Response> {
 
-
         @Override
         protected Response doInBackground(Void... params) {
-            final Response response = WeatherDataForAWeek.getJSONDataForAWeek(MainActivity.this, id);
+            final Response response = WeatherDataForAWeek.getJSONDataForAWeek(MainActivity.this, String.valueOf(id));
 
 
             if (response == null) {
                 handler.post(new Runnable() {
                     public void run() {
-                        Toast.makeText(MainActivity.this, MainActivity.this.getString(R.string.place_not_found),
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
-            } else {
-                handler.post(new Runnable() {
-                    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-                    public void run() {
-                        renderWeatherWeek(response);
+                        viewError.setVisibility(View.VISIBLE);
+                        viewWeather.setVisibility(View.GONE);
+                        viewBar.setVisibility(View.GONE);
                     }
                 });
             }
@@ -176,19 +205,15 @@ public class MainActivity extends AppCompatActivity {
     @SuppressLint("SetTextI18n")
     private void renderWeatherWeek(Response response) {
         try {
-//            List<DayForecast> list = response.getList();
-//            for (DayForecast dayForecast : list) {
-//                dayForecast.getClouds();
-//            }
-            gradus.setText(response.getList().get(1).getClouds() + "cnt:" + response.getCnt() + "cod:" + response.getCod());
-            Long day = response.getList().get(0).getDt()*1000;
-            @SuppressLint("SimpleDateFormat") String dayOfTheWeek = new SimpleDateFormat("dd MMMM yyyy").format(new Date(day));
-            humidity.setText(dayOfTheWeek);
-
+            for (int i = 1; i < 7; i++) {
+                foreCasts.add(new ForeCast(response.getList().get(i).getDt(), response.getList().get(i).getTemp(), response.getList().get(i).getSpeed(), response.getList().get(i).getHumidity(), response.getList().get(i).getPressure()));
+            }
+            addInAdapter();
 
         } catch (Exception e) {
-            Log.e("Weather", "One or more fields not found in the JSON data");
+            Log.e("Main", "One or more fields not found in the JSON data");
         }
+
     }
 
     //Обработка загруженных данных
@@ -197,64 +222,13 @@ public class MainActivity extends AppCompatActivity {
     private void renderWeather(City json) {
         try {
 
-            city.setText(String.valueOf(json.getId()));
-
-//            JSONObject details = json.getJSONArray("weather").getJSONObject(0);
-//            JSONObject main = json.getJSONObject("main");
-//            humidity.setText(getResources().getString(R.string.humidity)
-//                    + ": " + main.getString("humidity") + "%");
-//            pressure.setText(getResources().getString(R.string.pressure) + ": " + main.getString("pressure") + " hPa");
-//            gradus.setText(String.format("%.1f", main.getDouble("temp")));
-//
-//
-//            DateFormat df = DateFormat.getDateTimeInstance();
-//            String updatedOn = df.format(new Date(json.getLong("dt") * 1000));
-//            data.setText(getResources().getString(R.string.last_update) + " " + updatedOn);
-
-//            setWeatherIcon(details.getInt("id"), json.getJSONObject("sys").getLong("sunrise") * 1000,
-//                    json.getJSONObject("sys").getLong("sunset") * 1000);
+            city.setText(json.getName());
+            humidity.setText("Влажность: "+String.valueOf(json.getHumidity())+"%");
+            temp.setText( String.format("%.1f",json.getTemp())+"\u00b0C");
+            pressure.setText("Давление: "+String.valueOf(json.getPressure())+"hPa");
 
         } catch (Exception e) {
-            Log.e("Weather", "One or more fields not found in the JSON data");
+            Log.e("Main", "One or more fields not found in the JSON data");
         }
     }
-
-    //Подстановка нужной иконки
-//    private void setWeatherIcon(int actualId, long sunrise, long sunset) {
-//        int id = actualId / 100;
-//        String icon = "";
-//        if (actualId == 800) {
-//            long currentTime = new Date().getTime();
-//            if (currentTime >= sunrise && currentTime < sunset) {
-//                icon = MainActivity.this.getString(R.string.weather_sunny);
-//            } else {
-//                icon = MainActivity.this.getString(R.string.weather_clear_night);
-//            }
-//        } else {
-//            Log.d("SimpleWeather", "id " + id);
-//            switch (id) {
-//                case 2:
-//                    icon = MainActivity.this.getString(R.string.weather_thunder);
-//                    break;
-//                case 3:
-//                    icon = MainActivity.this.getString(R.string.weather_drizzle);
-//                    break;
-//                case 5:
-//                    icon = MainActivity.this.getString(R.string.weather_rainy);
-//                    break;
-//                case 6:
-//                    icon = MainActivity.this.getString(R.string.weather_snowy);
-//                    break;
-//                case 7:
-//                    icon = MainActivity.this.getString(R.string.weather_foggy);
-//                    break;
-//                case 8:
-//                    icon = MainActivity.this.getString(R.string.weather_cloudy);
-//                    break;
-//            }
-//        }
-//        sky.setText(icon);
-//    }
-
-
 }
