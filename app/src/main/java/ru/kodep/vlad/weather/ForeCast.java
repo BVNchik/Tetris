@@ -4,7 +4,7 @@ package ru.kodep.vlad.weather;
  * Created by vlad on 14.12.17
  */
 
-public class ForeCast {
+class ForeCast {
 
 
     private Long dt;
@@ -20,10 +20,13 @@ public class ForeCast {
         this.humidity = humidity;
         this.pressure = pressure;
     }
- public Long getDt() {return dt;}
- public Double getTemp() {return  temp;}
- public Double getSpeed() {return  speed;}
- public Double getHumidity() {return  humidity;}
- public Double getPressure() {return  pressure;}
+
+
+
+    Long getDt() {return dt;}
+ Double getTemp() {return  temp;}
+ Double getSpeed() {return  speed;}
+ Double getHumidity() {return  humidity;}
+ Double getPressure() {return  pressure;}
 }
 

@@ -3,7 +3,7 @@ package ru.kodep.vlad.weather.entity;
 import java.util.List;
 
 public class Response {
-
+private City city;
     private String cod;
     private Double message;
     private int cnt;
@@ -20,6 +20,7 @@ public class Response {
     public int getCnt() {
         return cnt;
     }
+    public City getCity() {return city;}
 
     public List<DayForecast> getList() {
         return list;

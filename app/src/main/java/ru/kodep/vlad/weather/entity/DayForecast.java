@@ -6,7 +6,7 @@ package ru.kodep.vlad.weather.entity;
 
 public class DayForecast {
 
-    private long dt;
+    private Long dt;
     private Temp temp;
     private Double pressure;
     private Double humidity;
@@ -22,7 +22,7 @@ public class DayForecast {
         return speed;
     }
 
-    public long getDt() {
+    public Long getDt() {
         return dt;
     }
 

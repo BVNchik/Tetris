@@ -9,13 +9,13 @@ class Main {
     private Double pressure;
     private Double humidity;
 
-    public Double getHumidity() {
+    Double getHumidity() {
         return humidity;
     }
-    public Double getTemp() {
+    Double getTemp() {
         return temp;
     }
-    public Double getPressure() {
+    Double getPressure() {
         return pressure;
     }
 }
