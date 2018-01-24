@@ -15,7 +15,7 @@ import android.util.Log;
 class GeoLocation {
     private LocationManager locationManager;
 
-    private OnLocationChangedCallback locationChangedCallback; //  = new MainActivity();
+    private OnLocationChangedCallback locationChangedCallback;
 
     interface  OnLocationChangedCallback {
         void onLocationChanged(String lat,String lon);
@@ -25,6 +25,7 @@ class GeoLocation {
         locationChangedCallback = activity;
         this.locationManager = locationManager;
         geoLocation();
+
     }
 
 

@@ -1,5 +1,6 @@
 package ru.kodep.vlad.weather;
 
+import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
@@ -8,12 +9,17 @@ import android.util.Log;
  * Created by vlad on 16.01.18
  */
 
-class DBHelper extends SQLiteOpenHelper {
+public class DBHelper extends SQLiteOpenHelper {
 
     DBHelper(MainActivity context) {
 // конструктор суперкласса
         super(context, "WeatherTable", null, 1);
     }
+
+    public DBHelper(Context context) {
+        super(context, "WeatherTable", null, 1);
+    }
+
 
     @Override
     public void onCreate(SQLiteDatabase db) {

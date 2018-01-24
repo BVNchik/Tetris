@@ -42,11 +42,11 @@ class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
        Double temp = foreCast.getTemp();
         holder.temp.setText(String.format("%.1f", temp) + "\u00b0C");
         String speed = String.valueOf(foreCast.getSpeed());
-        holder.speed.setText("Ветер: " + speed + "м/с");
+        holder.speed.setText("Ветер: \n" + speed + "м/с");
         String humidity = String.valueOf(foreCast.getHumidity());
-        holder.humidity.setText("Влажность: " + humidity + "%");
+        holder.humidity.setText("Влажность: \n" + humidity + "%");
         String pressure = String.valueOf(foreCast.getPressure());
-        holder.pressure.setText("Давление: " + pressure + "hPa");
+        holder.pressure.setText("Давление: \n" + pressure + "hPa");
 
     }
 

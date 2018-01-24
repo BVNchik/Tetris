@@ -19,7 +19,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:textColor="@color/colorAccent"
+            android:textAlignment="viewStart"
+            android:textColor="@color/colorPrimaryDark"
             android:textSize="18sp" />
 
         <TextView
@@ -27,7 +28,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_weight="2"
-            android:textColor="@color/colorAccent"
+            android:textAlignment="viewStart"
+            android:textColor="@color/colorPrimaryDark"
             android:textSize="18sp" />
 
     </LinearLayout>
@@ -44,8 +46,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="start"
-            android:textAlignment="viewStart"
-            android:textColor="@color/colorAccent"
+            android:textAlignment="center"
+            android:textColor="@color/colorPrimary"
             android:textSize="14sp" />
 
         <TextView
@@ -54,8 +56,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="start"
-            android:textAlignment="viewStart"
-            android:textColor="@color/colorAccent"
+            android:textAlignment="center"
+            android:textColor="@color/colorPrimary"
             android:textSize="14sp" />
 
         <TextView
@@ -64,8 +66,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="start"
-            android:textAlignment="viewStart"
-            android:textColor="@color/colorAccent"
+            android:textAlignment="center"
+            android:textColor="@color/colorPrimary"
             android:textSize="14sp" />
 
     </LinearLayout>

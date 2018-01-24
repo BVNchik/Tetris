@@ -1,11 +1,13 @@
 package ru.kodep.vlad.weather;
 
 import android.annotation.SuppressLint;
+import android.app.LoaderManager;
 import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.content.Loader;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,13 +36,13 @@ import java.util.Objects;
 import ru.kodep.vlad.weather.entity.City;
 import ru.kodep.vlad.weather.entity.Response;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, GeoLocation.OnLocationChangedCallback {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, GeoLocation.OnLocationChangedCallback, LoaderManager.LoaderCallbacks {
+    static final int LOADER_TIME_ID = 1;
+    final Uri WEATHER_URI = Uri.parse("content://ru.kodep.vlad.weather.WeatherData/WeatherTable");
     SearchCityTask mt;
     MyTaskWeather mtw;
     SearchTheNameCityTask stnct;
     MyTaskWeatherTheCity mtwtc;
-
-    private List<ForeCast> foreCasts = new ArrayList<>();
     Handler handler;
     DataAdapter adapter;
     TextView city;
@@ -54,8 +56,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView viewLoadingError;
     String lat, lon;
     String mCity, id;
-    DBHelper dbHelper;
     GeoLocation geoLocation;
+    private List<ForeCast> foreCasts = new ArrayList<>();
 
     @SuppressLint({"CommitTransaction", "WrongViewCast", "NewApi"})
     @Override
@@ -79,10 +81,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         humidity = findViewById(R.id.tvHumidity);
         pressure = findViewById(R.id.tvPressure);
         handler = new Handler();
-        dbHelper = new DBHelper(this);
         geoLocation = new GeoLocation(getSystemService(LocationManager.class), this);
         mCity = new CityPreference(MainActivity.this).getCity();
         monitorOutputDataBase();
+        Cursor cursor = getContentResolver().query(WEATHER_URI, null, null,
+                null, null);
+        startManagingCursor(cursor);
+
+        getLoaderManager().initLoader(LOADER_TIME_ID, null, this);
+        Log.i("Async", "onCreate is main");
+        AsyncLoader loader = null;
+        loader = (AsyncLoader) getLoaderManager().getLoader(LOADER_TIME_ID);
+        loader.forceLoad();
     }
 
 
@@ -162,6 +172,188 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         updateWeatherData();
     }
 
+    @SuppressLint({"WrongConstant", "DefaultLocale", "SetTextI18n"})
+    private void monitorOutputDataBaseToday() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.AM, 1);
+        cal.set(Calendar.HOUR, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MINUTE, 0);
+        String todayData = String.valueOf((cal.getTimeInMillis() / 1000 - 43199));
+        String todayDatas = String.valueOf((cal.getTimeInMillis() / 1000 + 43199));
+        Log.i("dasd", todayData + " - " + todayDatas);
+        String selection = "cityname = ? AND data > ? AND data < ?";
+        String citys = mCity;
+        String[] selectionArgs = new String[]{citys, todayData, todayDatas};
+
+        @SuppressLint("Recycle") Cursor d = getContentResolver().query(WEATHER_URI, null, selection, selectionArgs, null);
+        if (d.moveToFirst()) {
+            int citynameColIndex = d.getColumnIndex("cityname");
+            int tempColIndex = d.getColumnIndex("temps");
+            int humidityColIndex = d.getColumnIndex("humidity");
+            int pressureColIndex = d.getColumnIndex("pressure");
+
+            city.setText(d.getString(citynameColIndex));
+            humidity.setText("Влажность: " + String.valueOf(d.getString(humidityColIndex)) + "%");
+            temp.setText(String.format("%.1f", d.getDouble(tempColIndex)) + "\u00b0C");
+            pressure.setText("Давление: " + String.valueOf(d.getString(pressureColIndex)) + "hPa");
+
+        }
+        viewError.setVisibility(View.GONE);
+        viewWeather.setVisibility(View.VISIBLE);
+        viewBar.setVisibility(View.GONE);
+        viewLoading.setVisibility(View.VISIBLE);
+        viewLoadingError.setVisibility(View.GONE);
+    }
+
+    @SuppressLint("WrongConstant")
+    private void monitorOutputDataBase() {
+        @SuppressLint("Recycle") Cursor h = getContentResolver().query(WEATHER_URI, null, null, null, null);
+        if (h != null) {
+            if (h.getCount() == 0) {
+                viewError.setVisibility(View.VISIBLE);
+                viewWeather.setVisibility(View.GONE);
+                viewBar.setVisibility(View.GONE);
+            } else {
+                foreCasts.clear();
+                String selection = "cityname = ?";
+                String citys = mCity;
+                String[] selectionArgs = new String[]{citys};
+                @SuppressLint("Recycle") Cursor d = getContentResolver().query(WEATHER_URI, null, selection, selectionArgs, null);
+                if (d.moveToFirst()) {
+                    int tempColIndex = d.getColumnIndex("temps");
+                    int humidityColIndex = d.getColumnIndex("humidity");
+                    int pressureColIndex = d.getColumnIndex("pressure");
+                    int dataColIndex = d.getColumnIndex("data");
+                    int speedColIndex = d.getColumnIndex("speed");
+                    do {
+                        foreCasts.add(new ForeCast(d.getLong(dataColIndex), d.getDouble(tempColIndex), d.getDouble(speedColIndex), d.getDouble(humidityColIndex), d.getDouble(pressureColIndex)));
+                    } while (d.moveToNext());
+                }
+
+                monitorOutputDataBaseToday();
+                addInAdapter();
+            }
+        }
+    }
+
+    private void renderGeo() {
+        mtw = new MyTaskWeather();
+        mtw.execute();
+        foreCasts.clear();
+    }
+
+    private void renderGeoWeek(City result) {
+        id = result.getId();
+        mtwtc = new MyTaskWeatherTheCity();
+        mtwtc.execute();
+        foreCasts.clear();
+    }
+
+    private void errorVisible() {
+        viewLoading.setVisibility(View.GONE);
+        viewLoadingError.setVisibility(View.VISIBLE);
+    }
+
+    @SuppressLint("NewApi")
+    private void addAndUpdate(Response response) {
+        ContentValues cv = new ContentValues();
+        for (int i = 0; i < 7; i++) {
+            String name = null, datas = null;
+            String citys = response.getCity().getName();
+            String data = String.valueOf(response.getList().get(i).getDt());
+            String selection = "cityname = ? AND data = ?";
+            String[] selectionArgs = new String[]{citys, data};
+            @SuppressLint("Recycle")
+            Cursor h = getContentResolver().query(WEATHER_URI, null, selection, selectionArgs, null);
+            if (h.moveToFirst()) {
+                int citynameColIndex = h.getColumnIndex("cityname");
+                int dataColIndex = h.getColumnIndex("data");
+                do {
+                    name = h.getString(citynameColIndex);
+                    datas = h.getString(dataColIndex);
+                } while (h.moveToNext());
+            }
+            if (name == null | datas == null) {
+                cv.put("cityname", response.getCity().getName());
+                cv.put("temps", response.getList().get(i).getTemp());
+                cv.put("humidity", response.getList().get(i).getHumidity());
+                cv.put("pressure", response.getList().get(i).getPressure());
+                cv.put("speed", response.getList().get(i).getSpeed());
+                cv.put("data", response.getList().get(i).getDt());
+                Uri newUri = getContentResolver().insert(WEATHER_URI, cv);
+                assert newUri != null;
+                Log.i("MAIN", "insert, result Uri : " + newUri.toString());
+            } else if (Objects.equals(name, citys) & Objects.equals(datas, data)) {
+
+                cv.put("cityname", response.getCity().getName());
+                cv.put("temps", response.getList().get(i).getTemp());
+                cv.put("humidity", response.getList().get(i).getHumidity());
+                cv.put("pressure", response.getList().get(i).getPressure());
+                cv.put("speed", response.getList().get(i).getSpeed());
+                cv.put("data", response.getList().get(i).getDt());
+                int cnt = getContentResolver().update(WEATHER_URI, cv, selection, selectionArgs);
+                Log.i("MAIN", "update, count = " + cnt);
+
+            }
+
+        }
+        //добавление в шаблон вывода
+        String selection = "cityname = ?";
+        String city = response.getCity().getName();
+        String[] selectionArgs = new String[]{city};
+        @SuppressLint("Recycle") Cursor d = getContentResolver().query(WEATHER_URI, null, selection, selectionArgs, null);
+        if (d.moveToFirst()) {
+            int tempColIndex = d.getColumnIndex("temps");
+            int humidityColIndex = d.getColumnIndex("humidity");
+            int pressureColIndex = d.getColumnIndex("pressure");
+            int dataColIndex = d.getColumnIndex("data");
+            int speedColIndex = d.getColumnIndex("speed");
+            do {
+                foreCasts.add(new ForeCast(d.getLong(dataColIndex), d.getDouble(tempColIndex), d.getDouble(speedColIndex), d.getDouble(humidityColIndex), d.getDouble(pressureColIndex)));
+            } while (d.moveToNext());
+        }
+    }
+
+
+    //Обработка загруженных данных
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
+    @SuppressLint({"DefaultLocale", "SetTextI18n"})
+    private void renderWeather(Response json) {
+        try {
+            city.setText(json.getCity().getName());
+            humidity.setText("Влажность: " + String.valueOf(json.getList().get(0).getHumidity()) + "%");
+            temp.setText(String.format("%.1f", json.getList().get(0).getTemp()) + "\u00b0C");
+            pressure.setText("Давление: " + String.valueOf(json.getList().get(0).getPressure()) + "hPa");
+            Log.i("DHB", "sdfsd");
+        } catch (Exception e) {
+            Log.e("Main", "One or more fields not found in the JSON data");
+        }
+    }
+
+
+    @Override
+    public Loader onCreateLoader(int id, Bundle args) {
+        AsyncLoader loader = null;
+        if (id == LOADER_TIME_ID) {
+        loader = new AsyncLoader(this, null);
+        Log.i("Async", "запустилась из активити " + loader.hashCode());
+    }
+    return loader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader loader, Object data) {
+        Log.i("Async", "finish из активити " + loader.hashCode());
+        Log.i("Async", "finish вернул " + data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader loader) {
+        Log.i("Async", "restart из активити " + loader.hashCode());
+
+    }
+
     @SuppressLint("StaticFieldLeak")
     class SearchCityTask extends AsyncTask<Void, Void, City> {
 
@@ -216,87 +408,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 renderGeoWeek(result);
             }
         }
-    }
-
-    @SuppressLint({"WrongConstant", "DefaultLocale", "SetTextI18n"})
-    private void monitorOutputDataBaseToday() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.AM, 1);
-        cal.set(Calendar.HOUR, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MINUTE, 0);
-        String todayData = String.valueOf((cal.getTimeInMillis() / 1000 - 43199));
-        String todayDatas = String.valueOf((cal.getTimeInMillis() / 1000 + 43199));
-        Log.i("dasd", todayData + " - " + todayDatas);
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        String selection = "cityname = ? AND data > ? AND data < ?";
-        String citys = mCity;
-        String[] selectionArgs = new String[]{citys, todayData, todayDatas};
-        Cursor d = db.query("WeatherTable", null, selection, selectionArgs, null, null, null);
-        if (d.moveToFirst()) {
-            int citynameColIndex = d.getColumnIndex("cityname");
-            int tempColIndex = d.getColumnIndex("temps");
-            int humidityColIndex = d.getColumnIndex("humidity");
-            int pressureColIndex = d.getColumnIndex("pressure");
-
-            city.setText(d.getString(citynameColIndex));
-            humidity.setText("Влажность: " + String.valueOf(d.getString(humidityColIndex)) + "%");
-            temp.setText(String.format("%.1f", d.getDouble(tempColIndex)) + "\u00b0C");
-            pressure.setText("Давление: " + String.valueOf(d.getString(pressureColIndex)) + "hPa");
-
-        }
-        d.close();
-        dbHelper.close();
-        viewError.setVisibility(View.GONE);
-        viewWeather.setVisibility(View.VISIBLE);
-        viewBar.setVisibility(View.GONE);
-        viewLoading.setVisibility(View.VISIBLE);
-        viewLoadingError.setVisibility(View.GONE);
-    }
-
-    @SuppressLint("WrongConstant")
-    private void monitorOutputDataBase() {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        @SuppressLint("Recycle")
-        Cursor h = db.query("WeatherTable", null, null, null, null, null, null);
-        if (h.getCount() == 0) {
-            viewError.setVisibility(View.VISIBLE);
-            viewWeather.setVisibility(View.GONE);
-            viewBar.setVisibility(View.GONE);
-        } else {
-            foreCasts.clear();
-            String selection = "cityname = ?";
-            String citys = mCity;
-            String[] selectionArgs = new String[]{citys};
-            Cursor d = db.query("WeatherTable", null, selection, selectionArgs, null, null, null);
-            if (d.moveToFirst()) {
-                int tempColIndex = d.getColumnIndex("temps");
-                int humidityColIndex = d.getColumnIndex("humidity");
-                int pressureColIndex = d.getColumnIndex("pressure");
-                int dataColIndex = d.getColumnIndex("data");
-                int speedColIndex = d.getColumnIndex("speed");
-                do {
-                    foreCasts.add(new ForeCast(d.getLong(dataColIndex), d.getDouble(tempColIndex), d.getDouble(speedColIndex), d.getDouble(humidityColIndex), d.getDouble(pressureColIndex)));
-                } while (d.moveToNext());
-            }
-            d.close();
-            dbHelper.close();
-            monitorOutputDataBaseToday();
-            addInAdapter();
-        }
-    }
-
-    private void renderGeo() {
-        mtw = new MyTaskWeather();
-        mtw.execute();
-        foreCasts.clear();
-    }
-
-    private void renderGeoWeek(City result) {
-        id = result.getId();
-        mtwtc = new MyTaskWeatherTheCity();
-        mtwtc.execute();
-        foreCasts.clear();
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -370,88 +481,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 viewLoading.setVisibility(View.GONE);
                 viewLoadingError.setVisibility(View.GONE);
             }
-        }
-    }
-
-    private void errorVisible() {
-        viewLoading.setVisibility(View.GONE);
-        viewLoadingError.setVisibility(View.VISIBLE);
-    }
-
-
-    @SuppressLint("NewApi")
-    private void addAndUpdate(Response response) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        ContentValues cv = new ContentValues();
-        for (int i = 0; i < 7; i++) {
-            String name = null, datas = null;
-            String citys = response.getCity().getName();
-            String data = String.valueOf(response.getList().get(i).getDt());
-            String selection = "cityname = ? AND data = ?";
-            String[] selectionArgs = new String[]{citys, data};
-            @SuppressLint("Recycle")
-            Cursor h = db.query("WeatherTable", null, selection, selectionArgs, null, null, null);
-            if (h.moveToFirst()) {
-                int citynameColIndex = h.getColumnIndex("cityname");
-                int dataColIndex = h.getColumnIndex("data");
-                do {
-                    name = h.getString(citynameColIndex);
-                    datas = h.getString(dataColIndex);
-                } while (h.moveToNext());
-            }
-            if (name == null | datas == null) {
-                addDataBase(response, cv, i);
-                // вставляем запись и получаем ее ID
-                long rowID = db.insert("WeatherTable", null, cv);
-
-            } else if (Objects.equals(name, citys) & Objects.equals(datas, data)) {
-                addDataBase(response, cv, i);
-                // вставляем запись и получаем ее ID
-                db.update("WeatherTable", cv, selection, selectionArgs);
-            }
-            h.close();
-        }
-
-        //добавление в шаблон вывода
-        String selection = "cityname = ?";
-        String city = response.getCity().getName();
-        String[] selectionArgs = new String[]{city};
-        Cursor d = db.query("WeatherTable", null, selection, selectionArgs, null, null, null);
-        if (d.moveToFirst()) {
-            int tempColIndex = d.getColumnIndex("temps");
-            int humidityColIndex = d.getColumnIndex("humidity");
-            int pressureColIndex = d.getColumnIndex("pressure");
-            int dataColIndex = d.getColumnIndex("data");
-            int speedColIndex = d.getColumnIndex("speed");
-            do {
-                foreCasts.add(new ForeCast(d.getLong(dataColIndex), d.getDouble(tempColIndex), d.getDouble(speedColIndex), d.getDouble(humidityColIndex), d.getDouble(pressureColIndex)));
-            } while (d.moveToNext());
-        }
-        d.close();
-        dbHelper.close();
-    }
-
-    private void addDataBase(Response response, ContentValues cv, int i) {
-        cv.put("cityname", response.getCity().getName());
-        cv.put("temps", response.getList().get(i).getTemp());
-        cv.put("humidity", response.getList().get(i).getHumidity());
-        cv.put("pressure", response.getList().get(i).getPressure());
-        cv.put("speed", response.getList().get(i).getSpeed());
-        cv.put("data", response.getList().get(i).getDt());
-    }
-
-    //Обработка загруженных данных
-    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR1)
-    @SuppressLint({"DefaultLocale", "SetTextI18n"})
-    private void renderWeather(Response json) {
-        try {
-            city.setText(json.getCity().getName());
-            humidity.setText("Влажность: " + String.valueOf(json.getList().get(0).getHumidity()) + "%");
-            temp.setText(String.format("%.1f", json.getList().get(0).getTemp()) + "\u00b0C");
-            pressure.setText("Давление: " + String.valueOf(json.getList().get(0).getPressure()) + "hPa");
-            Log.i("DHB", "sdfsd");
-        } catch (Exception e) {
-            Log.e("Main", "One or more fields not found in the JSON data");
         }
     }
 }
