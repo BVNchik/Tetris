@@ -21,10 +21,10 @@
             </intent-filter>
         </activity>
 
-        <provider
-            android:name=".entity.GuestProvaider"
-            android:authorities="ru.kodep.vlad.weather.WeatherData"
-            tools:ignore="ExportedContentProvider" />
+        <!--<provider-->
+            <!--android:name=".entity.GuestProvaider"-->
+            <!--android:authorities="ru.kodep.vlad.weather.WeatherData"-->
+            <!--tools:ignore="ExportedContentProvider" />-->
     </application>
 
 </manifest>
