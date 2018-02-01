@@ -14,17 +14,22 @@ import ru.kodep.vlad.weather.entity.GuestProvaider;
 class AsyncLoaderDataAcquisition extends CursorLoader {
 
     private GuestProvaider guestProvaider;
+
     @SuppressLint("StaticFieldLeak")
     AsyncLoaderDataAcquisition(Context context, GuestProvaider guestProvaider) {
         super(context);
         this.guestProvaider = guestProvaider;
     }
 
+    @Override
+    protected void onStartLoading() {
+        super.onStartLoading();
+        forceLoad();
+    }
 
     @SuppressLint("NewApi")
     @Override
     public Cursor loadInBackground() {
-
         return guestProvaider.query(null, null);
     }
 }

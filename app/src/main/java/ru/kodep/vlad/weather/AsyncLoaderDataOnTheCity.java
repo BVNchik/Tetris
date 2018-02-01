@@ -15,26 +15,28 @@ import ru.kodep.vlad.weather.entity.GuestProvaider;
 
 class AsyncLoaderDataOnTheCity extends CursorLoader {
 
-    private GuestProvaider guestProvaider;
-    private String mCity;
     @SuppressLint("StaticFieldLeak")
     Context context;
+    private GuestProvaider guestProvaider;
 
-    AsyncLoaderDataOnTheCity(Context context, GuestProvaider guestProvaider, String mCity) {
+    AsyncLoaderDataOnTheCity(Context context, GuestProvaider guestProvaider) {
         super(context);
         this.guestProvaider = guestProvaider;
-        this.mCity = mCity;
-    this.context = context;
+        this.context = context;
     }
 
 
     @Override
+    protected void onStartLoading() {
+        super.onStartLoading();
+        forceLoad();
+    }
+
+    @Override
     public Cursor loadInBackground() {
         String selection = "cityname = ?";
-        String citys =  new CityPreference((Activity) context).getCity();
+        String citys = new CityPreference((Activity) context).getCity();
         String[] selectionArgs = new String[]{citys};
         return guestProvaider.query(selection, selectionArgs);
     }
-
-
 }

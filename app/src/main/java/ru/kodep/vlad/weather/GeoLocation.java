@@ -5,7 +5,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.util.Log;
+import android.support.annotation.Nullable;
 
 /**
  * Created by vlad on 18.01.18
@@ -14,33 +14,8 @@ import android.util.Log;
 @SuppressLint("Registered")
 class GeoLocation {
     private LocationManager locationManager;
-
-    private OnLocationChangedCallback locationChangedCallback;
-
-    interface  OnLocationChangedCallback {
-        void onLocationChanged(String lat,String lon);
-    }
-
-    GeoLocation(LocationManager locationManager, OnLocationChangedCallback activity) {
-        locationChangedCallback = activity;
-        this.locationManager = locationManager;
-        geoLocation();
-
-    }
-
-
-    @SuppressLint("MissingPermission")
-    private void geoLocation() {
-        locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER, 0, 10,
-                locationListener);
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER, 0, 10,
-                locationListener);
-        Log.i("EnabledGPS: ", String.valueOf(locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)));
-        Log.i("EnabledNetwork: ", String.valueOf(locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)));
-    }
-
+    @Nullable
+    private OnLocationChangedCallback mLocationChangedCallback;
     private LocationListener locationListener = new LocationListener() {
 
         @Override
@@ -50,12 +25,10 @@ class GeoLocation {
 
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras) {
-
         }
 
         @Override
         public void onProviderDisabled(String provider) {
-
         }
 
         @SuppressLint("MissingPermission")
@@ -65,12 +38,42 @@ class GeoLocation {
         }
     };
 
+    GeoLocation(LocationManager locationManager, @Nullable OnLocationChangedCallback activity) {
+        mLocationChangedCallback = activity;
+        this.locationManager = locationManager;
+        geoLocation();
+    }
+
+    void unsubscribe() {
+        locationManager.removeUpdates(locationListener);
+        mLocationChangedCallback = null;
+    }
+
+    @SuppressLint("MissingPermission")
+    private void geoLocation() {
+        locationManager.requestLocationUpdates(
+                LocationManager.GPS_PROVIDER, 0, 10,
+                locationListener);
+        locationManager.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER, 0, 10,
+                locationListener);
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) & !locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            assert mLocationChangedCallback != null;
+            mLocationChangedCallback.geoLocationSetting();
+        }
+    }
+
     private void showLocation(Location location) {
         String lat = String.valueOf(location.getLatitude());
         String lon = String.valueOf(location.getLongitude());
-        Log.i("LocationLAT", lat);
-        Log.i("LocationLON", lon);
-        locationChangedCallback.onLocationChanged(lat, lon);
+        assert mLocationChangedCallback != null;
+        mLocationChangedCallback.onLocationChanged(lat, lon);
         locationManager.removeUpdates(locationListener);
+    }
+
+    interface OnLocationChangedCallback {
+        void onLocationChanged(String lat, String lon);
+
+        void geoLocationSetting();
     }
 }

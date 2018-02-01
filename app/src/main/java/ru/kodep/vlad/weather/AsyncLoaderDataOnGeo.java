@@ -6,7 +6,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.support.v4.content.CursorLoader;
-import android.util.Log;
 
 import java.util.Objects;
 
@@ -34,62 +33,62 @@ class AsyncLoaderDataOnGeo extends CursorLoader {
         this.lon = lon;
     }
 
+    @Override
+    protected void onStartLoading() {
+        super.onStartLoading();
+        forceLoad();
+
+    }
 
     @SuppressLint("NewApi")
     @Override
     public Cursor loadInBackground() {
         final City city;
         city = WeatherData.getJSONDataDayGeo(context, lat, lon);
-        if (city != null) {
-            new CityPreference((Activity) context).setCity(city.getName());
-            String id = city.getId();
-            final Response response = WeatherData.getJSONDataWeekId(context, id);
-            if (response != null) {
-                ContentValues cv = new ContentValues();
-                for (int i = 0; i < 7; i++) {
-                    String name = null, datas = null;
-                    String citys = response.getCity().getName();
-                    String data = String.valueOf(response.getList().get(i).getDt());
-                    String selection = "cityname = ? AND data = ?";
-                    String[] selectionArgs = new String[]{citys, data};
-                    Cursor h = guestProvaider.query(selection, selectionArgs);
-                    if (h.moveToFirst()) {
-                        int citynameColIndex = h.getColumnIndex("cityname");
-                        int dataColIndex = h.getColumnIndex("data");
-                        do {
-                            name = h.getString(citynameColIndex);
-                            datas = h.getString(dataColIndex);
-                        } while (h.moveToNext());
-                    }
-                    if (name == null | datas == null) {
-                        cv.put("cityname", response.getCity().getName());
-                        cv.put("temps", response.getList().get(i).getTemp());
-                        cv.put("humidity", response.getList().get(i).getHumidity());
-                        cv.put("pressure", response.getList().get(i).getPressure());
-                        cv.put("speed", response.getList().get(i).getSpeed());
-                        cv.put("data", response.getList().get(i).getDt());
-                        long cnt = guestProvaider.insert(cv);
-                        Log.i("MAIN", "insert, count = " + cnt);
+        assert city != null;
+        new CityPreference((Activity) context).setCity(city.getName());
+        String id = city.getId();
+        final Response response = WeatherData.getJSONDataWeekId(context, id);
+        ContentValues cv = new ContentValues();
+        for (int i = 0; i < 7; i++) {
+            String name = null, datas = null;
+            assert response != null;
+            String citys = response.getCity().getName();
+            String data = String.valueOf(response.getList().get(i).getDt());
+            String selection = "cityname = ? AND data = ?";
+            String[] selectionArgs = new String[]{citys, data};
+            Cursor h = guestProvaider.query(selection, selectionArgs);
+            if (h.moveToFirst()) {
+                int citynameColIndex = h.getColumnIndex("cityname");
+                int dataColIndex = h.getColumnIndex("data");
+                do {
+                    name = h.getString(citynameColIndex);
+                    datas = h.getString(dataColIndex);
+                } while (h.moveToNext());
+            }
+            if (name == null | datas == null) {
+                cv.put("cityname", response.getCity().getName());
+                cv.put("temps", response.getList().get(i).getTemp());
+                cv.put("humidity", response.getList().get(i).getHumidity());
+                cv.put("pressure", response.getList().get(i).getPressure());
+                cv.put("speed", response.getList().get(i).getSpeed());
+                cv.put("data", response.getList().get(i).getDt());
+                guestProvaider.insert(cv);
 
-                    } else if (Objects.equals(name, citys) & Objects.equals(datas, data)) {
+            } else if (Objects.equals(name, citys) & Objects.equals(datas, data)) {
 
-                        cv.put("cityname", response.getCity().getName());
-                        cv.put("temps", response.getList().get(i).getTemp());
-                        cv.put("humidity", response.getList().get(i).getHumidity());
-                        cv.put("pressure", response.getList().get(i).getPressure());
-                        cv.put("speed", response.getList().get(i).getSpeed());
-                        cv.put("data", response.getList().get(i).getDt());
-                        int cnt = guestProvaider.update(cv, selection, selectionArgs);
-                        Log.i("MAIN", "update, count = " + cnt);
-                    }
-                }
-                //добавление в шаблон вывода
-                String selection = "cityname = ?";
-                String cityname = response.getCity().getName();
-                String[] selectionArgs = new String[]{cityname};
-                return guestProvaider.query(selection, selectionArgs);
+                cv.put("cityname", response.getCity().getName());
+                cv.put("temps", response.getList().get(i).getTemp());
+                cv.put("humidity", response.getList().get(i).getHumidity());
+                cv.put("pressure", response.getList().get(i).getPressure());
+                cv.put("speed", response.getList().get(i).getSpeed());
+                cv.put("data", response.getList().get(i).getDt());
+                guestProvaider.update(cv, selection, selectionArgs);
             }
         }
-        return null;
+        String selection = "cityname = ?";
+        String cityname = response.getCity().getName();
+        String[] selectionArgs = new String[]{cityname};
+        return guestProvaider.query(selection, selectionArgs);
     }
 }

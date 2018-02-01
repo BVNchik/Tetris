@@ -2,10 +2,12 @@ package ru.kodep.vlad.weather;
 
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.Loader;
@@ -13,7 +15,6 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,6 +24,8 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.util.Objects;
+
 import ru.kodep.vlad.weather.entity.GuestProvaider;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, GeoLocation.OnLocationChangedCallback, LoaderCallbacks<Cursor> {
@@ -31,7 +34,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     static final int ASYNC_LOADER_DATA_ON_THE_CITY = 2;
     static final int ASYNC_LOADER_UPDATING_AND_ADDING_DATA = 3;
     static final int ASYNC_LOADER_DATA_ON_GEO = 10;
-    int loaderDataForToday, loaderDataOnTheCity, loaderUpdatingAndAddingData, loaderDataAcquisition, loaderFirstStart;
     Handler handler;
     DataAdapter adapter;
     TextView city;
@@ -45,9 +47,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView viewLoadingError;
     String lat, lon;
     String mCity;
-    GeoLocation geoLocation;
     GuestProvaider guestProvaider;
-    Cursor cursor;
+    GeoLocation geo;
+
 
     @SuppressLint({"CommitTransaction", "WrongViewCast", "NewApi"})
     @Override
@@ -75,11 +77,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         guestProvaider = new GuestProvaider(this);
         guestProvaider.open();
         getSupportLoaderManager().initLoader(ASYNC_LOADER_DATA_ACQUISITION, null, this);
+        getSupportLoaderManager().initLoader(ASYNC_LOADER_UPDATING_AND_ADDING_DATA, null, this);
+
     }
 
 
     @SuppressLint("NewApi")
-    private void addInAdapter() {
+    private void addInAdapter(@NonNull Cursor cursor) {
         RecyclerView recyclerView = findViewById(R.id.rvListForeCast);
         adapter = new DataAdapter(this, cursor);
         recyclerView.setAdapter(adapter);
@@ -95,7 +99,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
-    //обработка нажатия пункта меню
     @SuppressLint("NewApi")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -103,9 +106,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (item.getItemId() == R.id.action_updater) {
             viewLoading.setVisibility(View.VISIBLE);
             viewLoadingError.setVisibility(View.GONE);
-            new GeoLocation(getSystemService(LocationManager.class), this);
+            geo = new GeoLocation(getSystemService(LocationManager.class), this);
         }
         return true;
+    }
+
+    @SuppressLint("NewApi")
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (geo != null)
+            geo.unsubscribe();
     }
 
     private void showInputDialog() {
@@ -117,16 +128,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         chooseCity.setView(input);
         chooseCity.setPositiveButton(getResources().getString(R.string.ok), new DialogInterface.OnClickListener() {
+            @SuppressLint("NewApi")
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                new CityPreference(MainActivity.this).setCity(input.getText().toString());
-                getSupportLoaderManager().restartLoader(ASYNC_LOADER_UPDATING_AND_ADDING_DATA, null, MainActivity.this);
-                viewLoading.setVisibility(View.VISIBLE);
+                if (!Objects.equals(input.getText().toString(), "")) {
+                    new CityPreference(MainActivity.this).setCity(input.getText().toString());
+                    getSupportLoaderManager().restartLoader(ASYNC_LOADER_UPDATING_AND_ADDING_DATA, null, MainActivity.this);
+                    viewLoading.setVisibility(View.VISIBLE);
+                }
             }
         });
         chooseCity.show();
     }
 
+    private void showGeoDialog() {
+        AlertDialog.Builder chooseCity = new AlertDialog.Builder(this);
+        chooseCity.setTitle(R.string.geoSetting);
+        chooseCity.setPositiveButton(getResources().getString(R.string.yes), new DialogInterface.OnClickListener() {
+            @SuppressLint("NewApi")
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            }
+        });
+        chooseCity.setNeutralButton(getResources().getString(R.string.no), new DialogInterface.OnClickListener() {
+            @SuppressLint("NewApi")
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                finish();
+            }
+        });
+        chooseCity.show();
+    }
 
     @Override
     public void onClick(View v) {
@@ -146,29 +179,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onLocationChanged(String lat, String lon) {
         this.lat = lat;
         this.lon = lon;
-        if (new CityPreference(MainActivity.this).getStart() == 0) {
-            getSupportLoaderManager().initLoader(ASYNC_LOADER_DATA_ON_GEO, null, this);
-        } else {
-            getSupportLoaderManager().restartLoader(ASYNC_LOADER_DATA_ON_GEO, null, this);
-        }
+        getSupportLoaderManager().restartLoader(ASYNC_LOADER_DATA_ON_GEO, null, this);
+    }
+
+    @Override
+    public void geoLocationSetting() {
+        showGeoDialog();
     }
 
 
     @SuppressLint({"WrongConstant", "SetTextI18n", "DefaultLocale"})
-    private void monitorOutputDataBase() {
+    private void monitorOutputDataBase(@NonNull Cursor cursor) {
 
-        Cursor d = cursor;
-        if (d.moveToFirst()) {
-            int citynameColIndex = d.getColumnIndex("cityname");
-            int tempColIndex = d.getColumnIndex("temps");
-            int humidityColIndex = d.getColumnIndex("humidity");
-            int pressureColIndex = d.getColumnIndex("pressure");
+        if (cursor.moveToFirst()) {
+            int citynameColIndex = cursor.getColumnIndex("cityname");
+            int tempColIndex = cursor.getColumnIndex("temps");
+            int humidityColIndex = cursor.getColumnIndex("humidity");
+            int pressureColIndex = cursor.getColumnIndex("pressure");
 
-            city.setText(d.getString(citynameColIndex));
-            humidity.setText("Влажность: " + String.valueOf(d.getString(humidityColIndex)) + "%");
-            temp.setText(String.format("%.1f", d.getDouble(tempColIndex)) + "\u00b0C");
-            pressure.setText("Давление: " + String.valueOf(d.getString(pressureColIndex)) + "hPa");
+            city.setText(cursor.getString(citynameColIndex));
+            humidity.setText("Влажность: " + String.valueOf(cursor.getString(humidityColIndex)) + "%");
+            temp.setText(String.format("%.1f", cursor.getDouble(tempColIndex)) + "\u00b0C");
+            pressure.setText("Давление: " + String.valueOf(cursor.getString(pressureColIndex)) + "hPa");
         }
+
         viewError.setVisibility(View.GONE);
         viewWeather.setVisibility(View.VISIBLE);
         viewBar.setVisibility(View.GONE);
@@ -176,37 +210,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         viewLoadingError.setVisibility(View.GONE);
     }
 
-
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Loader<Cursor> loader = null;
-        Log.i("Async", "пришел id = " + id);
-        mCity = new CityPreference(MainActivity.this).getCity();
         switch (id) {
             case ASYNC_LOADER_DATA_ACQUISITION:
-                loader = new AsyncLoaderDataAcquisition(this, guestProvaider);
-                loaderDataAcquisition = loader.hashCode();
-                Log.i("Async", "запущени лоадер 0  " + loaderDataAcquisition);
+                loader = new AsyncLoaderDataAcquisition(this, guestProvaider);;
                 break;
             case ASYNC_LOADER_DATA_ON_GEO:
                 loader = new AsyncLoaderDataOnGeo(this, guestProvaider, lat, lon);
-                loaderFirstStart = loader.hashCode();
-                Log.i("Async", "запущени лоадер 10  " + loaderFirstStart);
                 break;
             case ASYNC_LOADER_DATA_FOR_TODAY:
-                loader = new AsyncLoaderDataForToday(this, guestProvaider, mCity);
-                loaderDataForToday = loader.hashCode();
-                Log.i("Async", "запущени лоадер 1  " + loaderDataForToday);
+                loader = new AsyncLoaderDataForToday(this, guestProvaider);
                 break;
             case ASYNC_LOADER_DATA_ON_THE_CITY:
-                loader = new AsyncLoaderDataOnTheCity(this, guestProvaider, mCity);
-                loaderDataOnTheCity = loader.hashCode();
-                Log.i("Async", "запущени лоадер 2  " + loaderDataOnTheCity);
+                loader = new AsyncLoaderDataOnTheCity(this, guestProvaider);
                 break;
             case ASYNC_LOADER_UPDATING_AND_ADDING_DATA:
-                loader = new AsyncLoaderUpdatingAndAddingData(this, guestProvaider, mCity);
-                loaderUpdatingAndAddingData = loader.hashCode();
-                Log.i("Async", "запущени лоадер 3  " + loaderUpdatingAndAddingData);
+                loader = new AsyncLoaderUpdatingAndAddingData(this, guestProvaider);;
                 break;
         }
         return loader;
@@ -214,34 +235,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @SuppressLint("NewApi")
     @Override
-    public void onLoadFinished(android.support.v4.content.Loader<Cursor> loader, Cursor data) {
-        Log.i("Async", "вернула в активити  " + loader.hashCode());
-        cursor = data;
-        int hashcode = loader.hashCode();
-        if (hashcode == loaderDataAcquisition) {
-            if (cursor.getCount() == 0) {
-                new CityPreference(MainActivity.this).setStart((1));
-                geoLocation = new GeoLocation(getSystemService(LocationManager.class), this);
-            } else {
-                mCity = new CityPreference(MainActivity.this).getCity();
-                getSupportLoaderManager().initLoader(ASYNC_LOADER_UPDATING_AND_ADDING_DATA, null, this);
+    public void onLoadFinished(final android.support.v4.content.Loader<Cursor> loader, final Cursor data) {
+        if (data != null) {
+            switch (loader.getId()) {
+                case ASYNC_LOADER_DATA_ACQUISITION:
+                    mCity = new CityPreference(MainActivity.this).getCity();
+                    getSupportLoaderManager().initLoader(ASYNC_LOADER_UPDATING_AND_ADDING_DATA, null, this);
+                    break;
+                case ASYNC_LOADER_DATA_FOR_TODAY:
+                    monitorOutputDataBase(data);
+                    break;
+                case ASYNC_LOADER_DATA_ON_GEO:
+                    getSupportLoaderManager().restartLoader(ASYNC_LOADER_UPDATING_AND_ADDING_DATA, null, this);
+                    break;
+                case ASYNC_LOADER_DATA_ON_THE_CITY:
+                    addInAdapter(data);
+                    break;
+                case ASYNC_LOADER_UPDATING_AND_ADDING_DATA:
+                    addInAdapter(data);
+                    getSupportLoaderManager().restartLoader(ASYNC_LOADER_DATA_FOR_TODAY, null, this);
+                    break;
             }
-
-        } else if (hashcode == loaderDataForToday) {
-            monitorOutputDataBase();
-
-        } else if (hashcode == loaderFirstStart) {
-            if (new CityPreference(MainActivity.this).getStart() == 0) {
-                getSupportLoaderManager().initLoader(ASYNC_LOADER_UPDATING_AND_ADDING_DATA, null, this);
-            } else {
-                getSupportLoaderManager().restartLoader(ASYNC_LOADER_UPDATING_AND_ADDING_DATA, null, this);
-            }
-
-        } else if (hashcode == loaderDataOnTheCity) {
-            addInAdapter();
-        } else if (hashcode == loaderUpdatingAndAddingData) {
-            addInAdapter();
-            getSupportLoaderManager().restartLoader(ASYNC_LOADER_DATA_FOR_TODAY, null, this);
         }
     }
 

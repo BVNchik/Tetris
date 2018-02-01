@@ -4,6 +4,10 @@
         <string name="made_by_goodi" translatable="false">Made by GooDi</string>
         <string name="last_update">Last update</string>
         <string name="ok" translatable="false">OK</string>
+        <string name="geoSetting" translatable="false">ВКЛЮЧИТЬ ОПРЕДЕЛЕНИЕ МЕСТОПОЛОЖЕНИЯ</string>
+        <string name="yes" translatable="false">ДА</string>
+        <string name="no" translatable="false">НЕТ</string>
+
 
         <string name="weather_sunny" translatable="false">&#xf00d;</string>
         <string name="weather_clear_night" translatable="false">&#xf02e;</string>

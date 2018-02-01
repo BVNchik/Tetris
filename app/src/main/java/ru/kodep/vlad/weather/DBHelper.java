@@ -10,7 +10,7 @@ import android.util.Log;
  */
 
 public class DBHelper extends SQLiteOpenHelper {
-   static final String CITYNAME = "cityname";
+    private static final String CITYNAME = "cityname";
     static final String DATA = "data";
     static final String TEMPS = "temps";
     static final String HUMIDITY = "humidity";
@@ -19,22 +19,21 @@ public class DBHelper extends SQLiteOpenHelper {
 
 
     public DBHelper(Context context) {
-// конструктор суперкласса
         super(context, "WeatherTable", null, 1);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
         Log.i("DBH", "--- onCreate database ---");
-// создаем таблицу с полями
         db.execSQL("create table WeatherTable (" +
                 "id integer primary key autoincrement," +
                 CITYNAME + " text," +
-                DATA +" text," +
+                DATA + " text," +
                 TEMPS + " text," +
                 HUMIDITY + " text," +
                 PRESSURE + " text," +
-                SPEED + " text" + ");");   }
+                SPEED + " text" + ");");
+    }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
