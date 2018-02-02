@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     String mCity;
     GuestProvaider guestProvaider;
     GeoLocation geo;
+    int onGeo;
 
 
     @SuppressLint({"CommitTransaction", "WrongViewCast", "NewApi"})
@@ -107,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             viewLoading.setVisibility(View.VISIBLE);
             viewLoadingError.setVisibility(View.GONE);
             geo = new GeoLocation(getSystemService(LocationManager.class), this);
+            onGeo = 1;
         }
         return true;
     }
@@ -117,6 +119,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onStop();
         if (geo != null)
             geo.unsubscribe();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("onGeo", onGeo);
+
+
+    }
+
+    @SuppressLint("NewApi")
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        onGeo = savedInstanceState.getInt("onGeo");
+        if (onGeo == 1) {
+            geo = new GeoLocation(getSystemService(LocationManager.class), this);
+        }
     }
 
     private void showInputDialog() {
@@ -179,6 +199,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onLocationChanged(String lat, String lon) {
         this.lat = lat;
         this.lon = lon;
+        onGeo = 0;
         getSupportLoaderManager().restartLoader(ASYNC_LOADER_DATA_ON_GEO, null, this);
     }
 
@@ -215,7 +236,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Loader<Cursor> loader = null;
         switch (id) {
             case ASYNC_LOADER_DATA_ACQUISITION:
-                loader = new AsyncLoaderDataAcquisition(this, guestProvaider);;
+                loader = new AsyncLoaderDataAcquisition(this, guestProvaider);
                 break;
             case ASYNC_LOADER_DATA_ON_GEO:
                 loader = new AsyncLoaderDataOnGeo(this, guestProvaider, lat, lon);
@@ -227,7 +248,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 loader = new AsyncLoaderDataOnTheCity(this, guestProvaider);
                 break;
             case ASYNC_LOADER_UPDATING_AND_ADDING_DATA:
-                loader = new AsyncLoaderUpdatingAndAddingData(this, guestProvaider);;
+                loader = new AsyncLoaderUpdatingAndAddingData(this, guestProvaider);
                 break;
         }
         return loader;
