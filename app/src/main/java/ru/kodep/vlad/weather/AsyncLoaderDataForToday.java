@@ -17,7 +17,7 @@ import ru.kodep.vlad.weather.entity.GuestProvaider;
 class AsyncLoaderDataForToday extends CursorLoader {
     private static final long SECOND = 1000;
 
-    private GuestProvaider guestProvaider;
+    private  GuestProvaider guestProvaider;
     @SuppressLint("StaticFieldLeak")
     private Context context;
 

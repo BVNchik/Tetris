@@ -10,7 +10,7 @@ import android.util.Log;
  */
 
 public class DBHelper extends SQLiteOpenHelper {
-    private static final String CITYNAME = "cityname";
+    static final String CITYNAME = "cityname";
     static final String DATA = "data";
     static final String TEMPS = "temps";
     static final String HUMIDITY = "humidity";

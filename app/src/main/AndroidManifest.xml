@@ -21,7 +21,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity android:name=".DetailedWeatherActivity"></activity>
         <!--<provider-->
             <!--android:name=".entity.GuestProvaider"-->
             <!--android:authorities="ru.kodep.vlad.weather.WeatherData"-->

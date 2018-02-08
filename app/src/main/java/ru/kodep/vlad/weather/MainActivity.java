@@ -28,7 +28,7 @@ import java.util.Objects;
 
 import ru.kodep.vlad.weather.entity.GuestProvaider;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, GeoLocation.OnLocationChangedCallback, LoaderCallbacks<Cursor> {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, GeoLocation.OnLocationChangedCallback, LoaderCallbacks<Cursor>, DataAdapter.OnForeCastClickListener {
     static final int ASYNC_LOADER_DATA_ACQUISITION = 0;
     static final int ASYNC_LOADER_DATA_FOR_TODAY = 1;
     static final int ASYNC_LOADER_DATA_ON_THE_CITY = 2;
@@ -50,14 +50,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     GuestProvaider guestProvaider;
     GeoLocation geo;
     int onGeo;
-
+    private Cursor cursor;
 
     @SuppressLint({"CommitTransaction", "WrongViewCast", "NewApi"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
+
         findViewById(R.id.btnRefresh).setOnClickListener(this);
         findViewById(R.id.btnExit).setOnClickListener(this);
         viewBar = findViewById(R.id.viewBar);
@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         viewWeather = findViewById(R.id.viewWeather);
         viewLoading = findViewById(R.id.pbLoading);
         viewLoadingError = findViewById(R.id.tvLoadingError);
+//        llWeather = findViewById(R.id.llWeather);
         viewError.setVisibility(View.GONE);
         viewWeather.setVisibility(View.GONE);
         viewBar.setVisibility(View.VISIBLE);
@@ -86,7 +87,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @SuppressLint("NewApi")
     private void addInAdapter(@NonNull Cursor cursor) {
         RecyclerView recyclerView = findViewById(R.id.rvListForeCast);
-        adapter = new DataAdapter(this, cursor);
+        adapter = new DataAdapter(this, cursor, this);
         recyclerView.setAdapter(adapter);
         viewError.setVisibility(View.GONE);
         viewWeather.setVisibility(View.VISIBLE);
@@ -192,8 +193,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btnExit:
                 finish();
                 break;
+
         }
     }
+    @Override
+    public void onForeCastClick(ForeCast foreCast) {
+        String cityName = null; Long data = null; Double temp = null; Double speed = null; Double humidity= null; Double pressure= null;
+//        if (cursor.moveToFirst()) {
+//            int citynameColIndex = cursor.getColumnIndex("cityname");
+//            int tempColIndex = cursor.getColumnIndex("temps");
+//            int humidityColIndex = cursor.getColumnIndex("humidity");
+//            int pressureColIndex = cursor.getColumnIndex("pressure");
+//            int dataColIndex = cursor.getColumnIndex("data");
+//            int speedColIndex = cursor.getColumnIndex("speed");
+//
+//            cityName = String.valueOf(cursor.getString(citynameColIndex));
+//            humidity = Double.valueOf(String.valueOf(cursor.getString(humidityColIndex)));
+//            temp = Double.valueOf(String.valueOf(cursor.getString(tempColIndex)));
+//            pressure = Double.valueOf(String.valueOf(cursor.getString(pressureColIndex)));
+//            data = Long.valueOf(String.valueOf(cursor.getString(dataColIndex)));
+//            speed = Double.valueOf(String.valueOf(cursor.getString(speedColIndex)));
+//
+//        }
+        cityName = foreCast.getCityName();
+        data = foreCast.getDt();
+        temp = foreCast.getTemp();
+        humidity = foreCast.getHumidity();
+        pressure = foreCast.getPressure();
+        speed = foreCast.getSpeed();
+
+        Intent intent = new Intent(MainActivity.this, DetailedWeatherActivity.class);
+        intent.putExtra("DetailedWeather", new ForeCast(cityName, data, temp, humidity , pressure, speed));
+        startActivity(intent);
+    }
+
+
 
     @Override
     public void onLocationChanged(String lat, String lon) {
@@ -257,6 +291,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @SuppressLint("NewApi")
     @Override
     public void onLoadFinished(final android.support.v4.content.Loader<Cursor> loader, final Cursor data) {
+        cursor = data;
         if (data != null) {
             switch (loader.getId()) {
                 case ASYNC_LOADER_DATA_ACQUISITION:
@@ -285,6 +320,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onLoaderReset(android.support.v4.content.Loader<Cursor> loader) {
 
     }
+
+
 
 }
 
