@@ -15,7 +15,7 @@ import static ru.kodep.vlad.weather.DBHelper.TEMPS;
  * Created by vlad on 14.12.17
  */
 
-class ForeCast implements Parcelable {
+public class ForeCast implements Parcelable {
 
     public static final Parcelable.Creator<ForeCast> CREATOR = new Parcelable.Creator<ForeCast>() {
 
@@ -36,7 +36,7 @@ class ForeCast implements Parcelable {
     private Double speed;
     private Double pressure;
 
-    ForeCast(String cityName, Long dt, Double temp, Double speed, Double humidity, Double pressure) {
+    public ForeCast(String cityName, Long dt, Double temp, Double speed, Double humidity, Double pressure) {
         this.cityName = cityName;
         this.dt = dt;
         this.temp = temp;
@@ -76,7 +76,7 @@ class ForeCast implements Parcelable {
         Double speed = cursor.getDouble(speedColIndex);
         return new ForeCast(cityName, dt, temp, speed, humidity, pressure);
     }
-    String getCityName() {
+    public String getCityName() {
         return cityName;
     }
 
@@ -84,7 +84,7 @@ class ForeCast implements Parcelable {
         this.cityName = cityName;
     }
 
-    Long getDt() {
+    public Long getDt() {
         return dt;
     }
 
@@ -92,7 +92,7 @@ class ForeCast implements Parcelable {
         this.dt = dt;
     }
 
-    Double getTemp() {
+    public Double getTemp() {
         return temp;
     }
 
@@ -100,7 +100,7 @@ class ForeCast implements Parcelable {
         this.temp = temp;
     }
 
-    Double getSpeed() {
+    public Double getSpeed() {
         return speed;
     }
 
@@ -108,7 +108,7 @@ class ForeCast implements Parcelable {
         this.speed = speed;
     }
 
-    Double getHumidity() {
+    public Double getHumidity() {
         return humidity;
     }
 
@@ -116,7 +116,7 @@ class ForeCast implements Parcelable {
         this.humidity = humidity;
     }
 
-    Double getPressure() {
+    public Double getPressure() {
         return pressure;
     }
 

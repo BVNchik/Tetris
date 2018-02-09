@@ -1,7 +1,6 @@
 package ru.kodep.vlad.weather;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.database.Cursor;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
@@ -13,20 +12,22 @@ import android.widget.TextView;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import ru.kodep.vlad.weather.fragment.MainFragment;
+
 /**
  * Created by vlad on 21.12.17
  */
 
-class DataAdapter extends CursorRecyclerViewAdapter<DataAdapter.ViewHolder>{
+public class DataAdapter extends CursorRecyclerViewAdapter<DataAdapter.ViewHolder>{
 
 
     private final OnForeCastClickListener mOnForeCastClickListener;
     private Cursor cursor;
 
-    DataAdapter(Context context, Cursor cursor, @NonNull OnForeCastClickListener onForeCastClickListener) {
+    public DataAdapter(MainFragment context, Cursor cursor, @NonNull MainFragment onForeCastClickListener) {
         super(context, cursor);
         this.cursor = cursor;
-        mOnForeCastClickListener = onForeCastClickListener;
+        mOnForeCastClickListener = (OnForeCastClickListener) onForeCastClickListener;
     }
 
     @Override
@@ -88,7 +89,7 @@ class DataAdapter extends CursorRecyclerViewAdapter<DataAdapter.ViewHolder>{
         }
 
     }
-    interface OnForeCastClickListener {
+    public interface OnForeCastClickListener {
         void onForeCastClick(ForeCast foreCast);
     }
 }
