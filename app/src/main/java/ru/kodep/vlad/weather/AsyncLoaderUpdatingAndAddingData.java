@@ -1,7 +1,6 @@
 package ru.kodep.vlad.weather;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -18,13 +17,14 @@ import ru.kodep.vlad.weather.entity.Response;
  * Created by vlad on 24.01.18
  */
 
-class AsyncLoaderUpdatingAndAddingData extends CursorLoader {
+public class AsyncLoaderUpdatingAndAddingData extends CursorLoader {
 
     @SuppressLint("StaticFieldLeak")
+    private
     Context context;
     private GuestProvaider guestProvaider;
 
-    AsyncLoaderUpdatingAndAddingData(Context context, GuestProvaider guestProvaider) {
+    public AsyncLoaderUpdatingAndAddingData(Context context, GuestProvaider guestProvaider) {
         super(context);
         this.guestProvaider = guestProvaider;
         this.context = context;
@@ -39,9 +39,10 @@ class AsyncLoaderUpdatingAndAddingData extends CursorLoader {
     @SuppressLint("NewApi")
     @Override
     public Cursor loadInBackground() {
-        String mCity = new CityPreference((Activity) context).getCity();
-        final City city = WeatherData.getJSONDataDayNameCity(context, mCity);
+        String mCity = new CityPreference(context).getCity();
+        City city = WeatherData.getJSONDataDayNameCity(context, mCity);
         assert city != null;
+        new CityPreference(context).setCity(city.getName());
         String id = city.getId();
         final Response response = WeatherData.getJSONDataWeekId(context, id);
         ContentValues cv = new ContentValues();
@@ -82,8 +83,7 @@ class AsyncLoaderUpdatingAndAddingData extends CursorLoader {
             }
         }
         String selection = "cityname = ?";
-        String cityname = response.getCity().getName();
-        String[] selectionArgs = new String[]{cityname};
+        String[] selectionArgs = new String[]{mCity};
         return guestProvaider.query(selection, selectionArgs);
     }
 }

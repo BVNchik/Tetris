@@ -1,7 +1,6 @@
 package ru.kodep.vlad.weather;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -17,7 +16,7 @@ import ru.kodep.vlad.weather.entity.Response;
  * Created by vlad on 24.01.18
  */
 
-class AsyncLoaderDataOnGeo extends CursorLoader {
+public class AsyncLoaderDataOnGeo extends CursorLoader {
 
     private GuestProvaider guestProvaider;
     @SuppressLint("StaticFieldLeak")
@@ -25,7 +24,7 @@ class AsyncLoaderDataOnGeo extends CursorLoader {
     private String lat;
     private String lon;
 
-    AsyncLoaderDataOnGeo(Context context, GuestProvaider guestProvaider, String lat, String lon) {
+    public AsyncLoaderDataOnGeo(Context context, GuestProvaider guestProvaider, String lat, String lon) {
         super(context);
         this.context = context;
         this.guestProvaider = guestProvaider;
@@ -46,7 +45,7 @@ class AsyncLoaderDataOnGeo extends CursorLoader {
         final City city;
         city = WeatherData.getJSONDataDayGeo(context, lat, lon);
         assert city != null;
-        new CityPreference((Activity) context).setCity(city.getName());
+        new CityPreference(context).setCity(city.getName());
         String id = city.getId();
         final Response response = WeatherData.getJSONDataWeekId(context, id);
         ContentValues cv = new ContentValues();

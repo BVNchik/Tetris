@@ -91,6 +91,7 @@ public class DataAdapter extends CursorRecyclerViewAdapter<DataAdapter.ViewHolde
     }
     public interface OnForeCastClickListener {
         void onForeCastClick(ForeCast foreCast);
+
     }
 }
 

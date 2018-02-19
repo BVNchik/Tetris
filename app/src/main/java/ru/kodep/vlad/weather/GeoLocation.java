@@ -12,7 +12,7 @@ import android.support.annotation.Nullable;
  */
 
 @SuppressLint("Registered")
-class GeoLocation {
+public class GeoLocation {
     private LocationManager locationManager;
     @Nullable
     private OnLocationChangedCallback mLocationChangedCallback;
@@ -71,7 +71,7 @@ class GeoLocation {
         locationManager.removeUpdates(locationListener);
     }
 
-    interface OnLocationChangedCallback {
+    public interface OnLocationChangedCallback {
         void onLocationChanged(String lat, String lon);
 
         void geoLocationSetting();

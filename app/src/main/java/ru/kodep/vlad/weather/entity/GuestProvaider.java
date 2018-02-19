@@ -18,14 +18,17 @@ public class GuestProvaider {
 
     private SQLiteDatabase db;
     private Context context;
+    private DBHelper dbHelper;
 
     public GuestProvaider(Context context) {
         this.context = context;
 
     }
-
+public void close() {
+    if (dbHelper != null) dbHelper.close();
+}
     public void open() {
-        DBHelper dbHelper = new DBHelper(context);
+        dbHelper = new DBHelper(context);
         db = dbHelper.getWritableDatabase();
     }
 
@@ -35,13 +38,13 @@ public class GuestProvaider {
                 selectionArgs, null, null, null);
     }
 
-    public long insert(ContentValues values) {
+    public void insert(ContentValues values) {
 
-        return db.insert(WEATHER_TABLE, null, values);
+        db.insert(WEATHER_TABLE, null, values);
     }
 
-    public int update(ContentValues values, String selection,
-                      String[] selectionArgs) {
-        return db.update(WEATHER_TABLE, values, selection, selectionArgs);
+    public void update(ContentValues values, String selection,
+                       String[] selectionArgs) {
+        db.update(WEATHER_TABLE, values, selection, selectionArgs);
     }
 }
